@@ -1,10 +1,10 @@
 from blocksim.models.node import Node
 from blocksim.models.network import Network
-from blocksim.models.bitcoin.message import Message
+from blocksim.models.bitcoin.message import BTCMessage
 from blocksim.models.chain import Chain
 from blocksim.models.db import BaseDB
 from blocksim.models.consensus import Consensus
-from blocksim.models.transaction_queue import TransactionQueue
+# from blocksim.models.transaction_queue import TransactionQueue
 from blocksim.models.block import Block, BlockHeader
 from blocksim.utils import time, get_random_values
 
@@ -21,21 +21,23 @@ class BTCNode(Node):
         genesis = Block(BlockHeader())
         consensus = Consensus(env)
         chain = Chain(env, self, consensus, genesis, BaseDB())
-        self.hashrate = hashrate
-        self.is_mining = is_mining
+        # self.hashrate = hashrate
+        # self.is_mining = is_mining
         super().__init__(env,
                          network,
                          location,
                          address,
                          chain,
-                         consensus)
-        self.temp_txs = {}
-        self.tx_on_transit = {}
-        self.network_message = Message(self)
-        if is_mining:
-            # Transaction Queue to store the transactions
-            self.transaction_queue = TransactionQueue(
-                env, self, self.consensus)
+                         consensus,
+                         hashrate,
+                         is_mining)
+        # self.temp_txs = {}
+        # self.tx_on_transit = {}
+        self.network_message = BTCMessage(self)
+        # if is_mining:
+        #     # Transaction Queue to store the transactions
+        #     self.transaction_queue = TransactionQueue(
+        #         env, self, self.consensus)
         self._know_version = []
         self._handshaking = env.event()
 

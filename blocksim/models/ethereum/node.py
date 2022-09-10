@@ -6,7 +6,7 @@ from blocksim.models.db import BaseDB
 from blocksim.models.transaction_queue import TransactionQueue
 from blocksim.utils import time
 from blocksim.models.ethereum.block import Block, BlockHeader
-from blocksim.models.ethereum.message import Message
+from blocksim.models.ethereum.message import ETHMessage
 
 
 class ETHNode(Node):
@@ -21,20 +21,22 @@ class ETHNode(Node):
         genesis = Block(BlockHeader())
         consensus = Consensus(env)
         chain = Chain(env, self, consensus, genesis, BaseDB())
-        self.hashrate = hashrate
-        self.is_mining = is_mining
+        # self.hashrate = hashrate
+        # self.is_mining = is_mining
         super().__init__(env,
                          network,
                          location,
                          address,
                          chain,
-                         consensus)
-        self.temp_headers = {}
-        self.network_message = Message(self)
-        if is_mining:
-            # Transaction Queue to store the transactions
-            self.transaction_queue = TransactionQueue(
-                env, self, self.consensus)
+                         consensus,
+                         hashrate,
+                         is_mining)
+        # self.temp_headers = {}
+        self.network_message = ETHMessage(self)
+        # if is_mining:
+        #     # Transaction Queue to store the transactions
+        #     self.transaction_queue = TransactionQueue(
+        #         env, self, self.consensus)
         self._handshaking = env.event()
 
     def build_new_block(self):

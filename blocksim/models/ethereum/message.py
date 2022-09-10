@@ -1,7 +1,7 @@
 from blocksim.utils import kB_to_MB
 
 
-class Message:
+class ETHMessage:
     """Defines a model for the network messages of the Ethereum blockchain.
 
     For each message its calculated the size, taking into account measurements from the live and public network.

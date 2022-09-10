@@ -3,6 +3,7 @@ from blocksim.models.network import Connection, Network
 from blocksim.models.chain import Chain
 from blocksim.models.consensus import Consensus
 from blocksim.utils import get_received_delay, get_sent_delay, get_latency_delay, time
+from blocksim.models.transaction_queue import TransactionQueue
 
 Envelope = namedtuple('Envelope', 'msg, timestamp, destination, origin')
 
@@ -32,7 +33,9 @@ class Node:
                  location: str,
                  address: str,
                  chain: Chain,
-                 consensus: Consensus):
+                 consensus: Consensus,
+                 hashrate:float,
+                 is_mining:bool):
         self.env = env
         self.network = network
         self.location = location
@@ -40,6 +43,19 @@ class Node:
         self.chain = chain
         self.consensus = consensus
         self.active_sessions = {}
+
+        self.hashrate = hashrate
+        self.is_mining = is_mining
+
+        self.temp_txs = {}
+        self.tx_on_transit = {}
+        self.temp_headers = {}
+        
+        if is_mining:
+            # Transaction Queue to store the transactions
+            self.transaction_queue = TransactionQueue(
+                env, self, self.consensus)
+
         self.connecting = None
         # Join the node to the network
         self.network.add_node(self)
