@@ -66,7 +66,14 @@ class Block:
     def __init__(self, header: BlockHeader, transactions=None):
         self.header = header
         self.transactions = transactions
+        self.add_txn_proc_time(header, transactions)
 
     @property
     def transaction_count(self):
         return len(self.transactions)
+    
+    def add_txn_proc_time(self, header:BlockHeader, transactions:list):
+        if transactions is not None:
+            for tx in transactions:
+                tx.proc_time = header.timestamp
+

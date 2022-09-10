@@ -12,6 +12,8 @@ class Transaction:
     :param value: amount to send to destination
     :param signature: sender signature
     :param fee: a fee destinated to the node that will insert the transaction on the chain
+    :param gen_time: stores the time at which the transaction was generated
+    :param proc_time: records the time at which the transaction was processed
     """
 
     def __init__(self,
@@ -19,12 +21,16 @@ class Transaction:
                  sender,
                  value,
                  signature,
-                 fee):
+                 fee,
+                 gen_time,
+                 proc_time=0):
         self.to = to
         self.sender = sender
         self.value = value
         self.signature = signature
         self.fee = fee
+        self.gen_time = gen_time
+        self.proc_time = proc_time
 
     @property
     def hash(self):

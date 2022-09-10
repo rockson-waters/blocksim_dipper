@@ -4,6 +4,7 @@ from blocksim.models.chain import Chain
 from blocksim.models.consensus import Consensus
 from blocksim.utils import get_received_delay, get_sent_delay, get_latency_delay, time
 from blocksim.models.transaction_queue import TransactionQueue
+import simpy
 
 Envelope = namedtuple('Envelope', 'msg, timestamp, destination, origin')
 
@@ -28,7 +29,7 @@ class Node:
     """
 
     def __init__(self,
-                 env,
+                 env:simpy.Environment,
                  network: Network,
                  location: str,
                  address: str,

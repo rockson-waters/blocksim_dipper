@@ -22,10 +22,12 @@ class Transaction(BaseTransaction):
                  signature,
                  nonce,
                  gasprice,
-                 startgas):
+                 startgas,
+                 gen_time,
+                 proc_time=0):
         # In Ethereum the fee is calculated as following:
         fee = gasprice * startgas
-        super().__init__(to, sender, value, signature, fee)
+        super().__init__(to, sender, value, signature, fee, gen_time, proc_time)
         self.nonce = nonce
         self.gasprice = gasprice
         self.startgas = startgas

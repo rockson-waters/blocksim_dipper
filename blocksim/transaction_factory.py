@@ -2,6 +2,7 @@ import string
 from random import randint, choices
 from blocksim.models.transaction import Transaction
 from blocksim.models.ethereum.transaction import Transaction as ETHTransaction
+from blocksim.world import SimulationWorld
 
 
 class TransactionFactory:
@@ -12,7 +13,7 @@ class TransactionFactory:
     number of batches, number of transactions per batch and the interval in seconds between each batch.
     """
 
-    def __init__(self, world):
+    def __init__(self, world:SimulationWorld):
         self._world = world
 
     def broadcast(self, number_of_batches, transactions_per_batch, interval, nodes_list):
@@ -23,11 +24,11 @@ class TransactionFactory:
                 rand_sign = ''.join(
                     choices(string.ascii_letters + string.digits, k=20))
                 if self._world.blockchain == 'bitcoin':
-                    tx = Transaction('address', 'address', 140, rand_sign, 50)
+                    tx = Transaction('address', 'address', 140, rand_sign, 50, self._world.env.now)
                 elif self._world.blockchain == 'ethereum':
                     gas_limit = self._world.env.config['ethereum']['tx_gas_limit']
                     tx = ETHTransaction('address', 'address',
-                                        140, rand_sign, i, 2, gas_limit)
+                                        140, rand_sign, i, 2, gas_limit, self._world.env.now)
                 transactions.append(tx)
             self._world.env.data['created_transactions'] += len(transactions)
             # Choose a random node to broadcast the transaction
