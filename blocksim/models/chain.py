@@ -13,6 +13,7 @@ class Chain:
         self.consensus = consensus
         self.db = db
         self.genesis = genesis
+        self.blocks_in_chain = []
 
         # Set the score (AKA total difficulty in PoW)
         self.db.put(f'score:{genesis.header.hash}', "0")
@@ -21,6 +22,7 @@ class Chain:
         self.db.put(f'block:{genesis.header.number}', genesis.header.hash)
         self.db.put(genesis.header.hash, genesis)
         self._head_hash = genesis.header.hash
+        self.blocks_in_chain.append(genesis)
         self.parent_queue = {}
 
     @property
@@ -102,7 +104,7 @@ class Chain:
         """Get the children of a block"""
         return [self.get_block(h) for h in self.get_child_hashes(block.header.hash)]
 
-    def add_block(self, block):
+    def   add_block(self, block):
         """Call upon receiving a block"""
         # Is the block being added to the heap?
         if block.header.prevhash == self._head_hash:
