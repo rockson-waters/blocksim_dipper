@@ -147,7 +147,7 @@ class Node:
                     initial_time = tx_propagation.get(tx.hash[:8], None)
                     if initial_time is not None:
                         propagation_time = self.env.now - initial_time
-                        txs.update({f'{tx.hash[:8]}': (initial_time ,propagation_time)})
+                        txs.update({f'{tx.hash[:8]}': (initial_time, propagation_time)})
                 self.env.data['tx_propagation'][f'{envelope.origin.address}_{envelope.destination.address}'].update(
                     txs)
             # Monitor the block propagation on Ethereum
@@ -159,7 +159,7 @@ class Node:
                     initial_time = block_propagation.get(block_hash[:8], None)
                     if initial_time is not None:
                         propagation_time = self.env.now - initial_time
-                        blocks.update({f'{block_hash[:8]}': (initial_time ,propagation_time)})
+                        blocks.update({f'{block_hash[:8]}': (initial_time, propagation_time)})
                 self.env.data['block_propagation'][f'{envelope.origin.address}_{envelope.destination.address}'].update(
                     blocks)
 

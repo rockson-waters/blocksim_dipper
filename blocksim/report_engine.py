@@ -1,6 +1,6 @@
-
-import string
+from math import ceil
 from blocksim.models import node as Node
+
 
 class ReportEngine:
     
@@ -13,15 +13,18 @@ class ReportEngine:
         self.proc_times = []
         self.all_txns = []
         self.block_num_hash = {}
-        self.block_receive_times = {}
 
         if env_data is not None:
             self.env_data = env_data
-            self.tx_prop = self.env_data['tx_propagation']
-            self.block_prop = self.env_data['block_propagation']
+            self.tx_prop = self.env_data['tx_propagation'] # simulation output
+            self.block_prop = self.env_data['block_propagation'] # simulation output
+
+        self.block_props = {} # extracted from simulation output, per peer
 
         self._get_block_number_and_hash(self.blocks)
-        self._get_blocks_received_by_all_peer_with_prop_time(self.nodes, self.block_prop)
+        self._get_blocks_prop_times(self.nodes, self.block_prop)
+        self._get_block_receive_times(self.nodes, self.block_prop)
+        self._get_network_wide_latency(self.block_num_hash)
 
     def _get_block_number_and_hash(self, blocks):
         i = 0
@@ -43,12 +46,14 @@ class ReportEngine:
                 split = str.split(key, "_")
                 if ((split[1] == address) and (len(block_prop[key]) > 0) ):
                     for k,v in block_prop[key].items():
-                        blocks_and_times[k] = v[0] + v[1]
+                        if type(v) is tuple:
+                            blocks_and_times[k] = v[0] + v[1]
 
             block_receive_time_all_node[address] = blocks_and_times
         return block_receive_time_all_node
 
-    def _get_blocks_received_by_all_peer_with_prop_time(self, nodes:list, block_prop:dict):
+
+    def _get_blocks_prop_times(self, nodes:list, block_prop:dict):
         block_props_all_node = {}
         blocks_and_times = {}
 
@@ -62,10 +67,11 @@ class ReportEngine:
                 split = str.split(key, "_")
                 if ((split[1] == address) and (len(block_prop[key]) > 0) ):
                     for k,v in block_prop[key].items():
-                        blocks_and_times[k] = v[1]
+                        if type(v) is tuple:
+                            blocks_and_times[k] = v[1]
 
             block_props_all_node[address] = blocks_and_times
-        return block_props_all_node
+        self.block_props = block_props_all_node
 
 
 
@@ -129,13 +135,42 @@ class ReportEngine:
         ratio = total_proc_txn / total_gen_txns
         return ratio
 
-    def _get_average_block_dist_latency(self, alpha=0.8):
+    def _get_network_wide_latency(self, block_num_hash:dict, alpha=0.8):
         """Calculates the average block distribution time
 
         Args:
             alpha (float, optional): the percentage of peers which must have the block. Defaults to 0.8.
         """
-        blk_prop = self.block_prop
+        latencies = {}
+        node_time = {} # to store all peers and corresponding time in which they received a specified block
+        latency = 0.0
+        target_num_nodes = ceil(alpha * len(self.nodes)) - 1 # Exclude the node which mined the block
+        block_probs = self.block_props
+        nodes = self.nodes
+        i = 0
+
+        for num, hash in block_num_hash.items():
+            for node in nodes:
+                props = block_probs[node.address] # dictionary of block_hash and prop time
+                if (props.get(hash) is not None):
+                    node_time[i] = props[hash] # store entries using integers to makes it easy to select the value corresponding to the target_num_nodes variable
+                    i += 1
+
+            
+            if len(node_time) > 0:
+                j = 0
+                s = sorted(node_time.items(), key=lambda x:x[1])
+                t = dict(s)
+                for x in t.values():
+                    if (j == (target_num_nodes - 1)):
+                        latency = x
+                    j += 1
+                latencies.update({hash: latency})
+            
+            i = 0
+            node_time = {}
+
+
 
     def _get_average_finality_time(self):
         pass
