@@ -1,10 +1,12 @@
 import time
 import os
 from json import dumps as dump_json
+from blocksim.report_engine import ReportEngine
 from blocksim.world import SimulationWorld
 from blocksim.node_factory import NodeFactory
 from blocksim.transaction_factory import TransactionFactory
 from blocksim.models.network import Network
+
 
 
 def write_report(world):
@@ -24,6 +26,7 @@ def report_node_chain(world, nodes_list):
         num_blocks = 0
         for i in range(head.header.number):
             b = node.chain.get_block_by_number(i)
+            node.blocks_in_chain.append(b)
             chain_list.append(str(b.header))
             num_blocks += 1
         chain_list.append(str(head.header))
@@ -85,6 +88,12 @@ def run_model():
     world.start_simulation()
 
     report_node_chain(world, nodes_list)
+    reports = ReportEngine(nodes_list, world.env.data)
+    av_txn_latency = reports._get_average_txn_proc_time()
+    txn_throughput = reports.get_transaction_throughput(duration)
+    txn_proc_ratio = reports.get_transactions_processing_ratio()
+    block_report = reports.get_global_block_report()
+    print(nodes_list)
     write_report(world)
 
 

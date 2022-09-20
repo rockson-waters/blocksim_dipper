@@ -13,8 +13,7 @@ class Chain:
         self.consensus = consensus
         self.db = db
         self.genesis = genesis
-        self.blocks_in_chain = []
-
+        
         # Set the score (AKA total difficulty in PoW)
         self.db.put(f'score:{genesis.header.hash}', "0")
 
@@ -22,7 +21,6 @@ class Chain:
         self.db.put(f'block:{genesis.header.number}', genesis.header.hash)
         self.db.put(genesis.header.hash, genesis)
         self._head_hash = genesis.header.hash
-        self.blocks_in_chain.append(genesis)
         self.parent_queue = {}
 
     @property
