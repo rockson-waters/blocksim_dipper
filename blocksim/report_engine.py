@@ -1,5 +1,6 @@
 from math import ceil
 from blocksim.models import node as Node
+from csv import writer
 
 
 class ReportEngine:
@@ -79,8 +80,8 @@ class ReportEngine:
 
 
 
-    def get_global_txn_report(self):
-        pass
+    # def get_global_txn_report(self):
+    #     pass
 
     def get_global_block_report(self):
         data = {}
@@ -107,15 +108,15 @@ class ReportEngine:
             }
         return data
 
-    def _get_peer_txn_report(self):
-        pass
+    # def _get_peer_txn_report(self):
+    #     pass
 
-    def _get_peer_block_report(self):
-        pass
+    # def _get_peer_block_report(self):
+    #     pass
 
-    def _get_average_txn_dist_latency(self):
+    # def _get_average_txn_dist_latency(self):
         
-        txn_prop = self.tx_prop
+    #     txn_prop = self.tx_prop
 
     def _get_average_txn_proc_time(self):
         
@@ -177,14 +178,18 @@ class ReportEngine:
                     if (j == (target_num_nodes - 1)):
                         latency = x - block_creation_time
                     j += 1
-                latencies.update({hash: latency})
+                latencies.update({num: latency})
             
             i = 0
             node_time = {}
+        with open("latencies.csv", "w") as csvfile:
+            my_wirter = writer(csvfile, delimiter=",")
+            my_wirter.writerows(latencies.items())
+        return latencies
 
 
 
-    def _get_average_finality_time(self, delta=6):
+    def _get_average_finality_time(self, delta=6, path="reports"):
         # time difference between the creation of a block and six consecutive blocks
         t1 = 0.0
         t2 = 0.0
@@ -194,7 +199,7 @@ class ReportEngine:
         hash1 = ""
         hash2 = ""
         block_hashes = self.block_num_hash
-        finality_times = []
+        finality_times = {}
 
         chain_length = len(self.blocks)
         while i2 < chain_length:
@@ -203,10 +208,13 @@ class ReportEngine:
             t1 = self._get_block_creation_time(hash1)
             t2 = self._get_block_creation_time(hash2)
             finality_time = t2 - t1
-            finality_times.append(finality_time)
+            finality_times[i1] = finality_time
             
             i1 += 1
             i2 = i1 + delta
+        with open("finality.csv", "w") as csvfile:
+            my_wirter = writer(csvfile, delimiter=",")
+            my_wirter.writerows(finality_times.items())
         return finality_times
 
 
