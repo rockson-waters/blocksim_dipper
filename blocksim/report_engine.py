@@ -26,6 +26,7 @@ class ReportEngine:
         self._get_blocks_prop_times(self.nodes, self.block_prop)
         self._get_block_receive_times(self.nodes, self.block_prop)
         self._get_network_wide_latency(self.block_num_hash)
+        self._get_average_finality_time()
 
     def _get_block_number_and_hash(self, blocks):
         i = 0
@@ -146,7 +147,8 @@ class ReportEngine:
         """Calculates the average block distribution time
 
         Args:
-            alpha (float, optional): the percentage of peers which must have the block. Defaults to 0.8.
+            block_num_hash (dict): a dictionary containing hashes of all blocks
+            alpha (float, optional): alpha (float, optional): the percentage of peers which must have the block. Defaults to 0.8.
         """
         latencies = {}
         node_time = {} # to store all peers and corresponding time in which they received a specified block
@@ -182,6 +184,31 @@ class ReportEngine:
 
 
 
-    def _get_average_finality_time(self):
-        pass
+    def _get_average_finality_time(self, delta=6):
+        # time difference between the creation of a block and six consecutive blocks
+        t1 = 0.0
+        t2 = 0.0
+        finality_time = 0.0
+        i1 = 1   # we exclude the genesis block
+        i2 = i1 + delta
+        hash1 = ""
+        hash2 = ""
+        block_hashes = self.block_num_hash
+        finality_times = []
+
+        chain_length = len(self.blocks)
+        while i2 < chain_length:
+            hash1 = block_hashes[i1]
+            hash2 = block_hashes[i2]
+            t1 = self._get_block_creation_time(hash1)
+            t2 = self._get_block_creation_time(hash2)
+            finality_time = t2 - t1
+            finality_times.append(finality_time)
+            
+            i1 += 1
+            i2 = i1 + delta
+        return finality_times
+
+
+
 
