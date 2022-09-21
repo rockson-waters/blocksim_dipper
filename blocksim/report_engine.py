@@ -20,6 +20,7 @@ class ReportEngine:
             self.block_prop = self.env_data['block_propagation'] # simulation output
 
         self.block_props = {} # extracted from simulation output, per peer
+        self.block_receive_times = {}
 
         self._get_block_number_and_hash(self.blocks)
         self._get_blocks_prop_times(self.nodes, self.block_prop)
@@ -50,7 +51,7 @@ class ReportEngine:
                             blocks_and_times[k] = v[0] + v[1]
 
             block_receive_time_all_node[address] = blocks_and_times
-        return block_receive_time_all_node
+        self.block_receive_times = block_receive_time_all_node
 
 
     def _get_blocks_prop_times(self, nodes:list, block_prop:dict):
@@ -135,6 +136,12 @@ class ReportEngine:
         ratio = total_proc_txn / total_gen_txns
         return ratio
 
+    def _get_block_creation_time(self, block_hash:str):
+        # hash = block_hash
+        for block in self.blocks:
+            if (block_hash == block.header.hash[:8]):
+                return block.header.timestamp
+
     def _get_network_wide_latency(self, block_num_hash:dict, alpha=0.8):
         """Calculates the average block distribution time
 
@@ -146,14 +153,17 @@ class ReportEngine:
         latency = 0.0
         target_num_nodes = ceil(alpha * len(self.nodes)) - 1 # Exclude the node which mined the block
         block_probs = self.block_props
+        block_receive_time = self.block_receive_times
+        block_creation_time = 0.0
         nodes = self.nodes
         i = 0
 
         for num, hash in block_num_hash.items():
+            block_creation_time = self._get_block_creation_time(hash)
             for node in nodes:
-                props = block_probs[node.address] # dictionary of block_hash and prop time
-                if (props.get(hash) is not None):
-                    node_time[i] = props[hash] # store entries using integers to makes it easy to select the value corresponding to the target_num_nodes variable
+                rec_time = block_receive_time[node.address] # dictionary of block_hash and prop time
+                if (rec_time.get(hash) is not None):
+                    node_time[i] = rec_time[hash] # store entries using integers to makes it easy to select the value corresponding to the target_num_nodes variable
                     i += 1
 
             
@@ -163,7 +173,7 @@ class ReportEngine:
                 t = dict(s)
                 for x in t.values():
                     if (j == (target_num_nodes - 1)):
-                        latency = x
+                        latency = x - block_creation_time
                     j += 1
                 latencies.update({hash: latency})
             
