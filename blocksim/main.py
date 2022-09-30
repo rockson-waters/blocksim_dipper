@@ -9,7 +9,7 @@ from blocksim.transaction_factory import TransactionFactory
 from blocksim.models.network import Network
 
 RNS = True
-AV_NEIGHBOURS = 4
+AV_NEIGHBOURS = 7
 
 def write_report(world):
     path = 'output/report.json'
@@ -104,10 +104,9 @@ def run_model():
 
     report_node_chain(world, nodes_dict)
     reports = ReportEngine(nodes_dict, world.env.data)
-    av_txn_latency = reports._get_average_txn_proc_time()
-    txn_throughput = reports.get_transaction_throughput(duration)
-    txn_proc_ratio = reports.get_transactions_processing_ratio()
-    block_report = reports.get_global_block_report()
+    reports.get_txn_report(duration)
+    reports._get_average_finality_time()
+    reports._get_network_wide_latency()
     print(nodes_dict)
     write_report(world)
 

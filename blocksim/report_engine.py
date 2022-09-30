@@ -1,3 +1,4 @@
+import json
 from math import ceil
 from blocksim.models import node as Node
 from csv import writer
@@ -108,15 +109,17 @@ class ReportEngine:
             }
         return data
 
-    # def _get_peer_txn_report(self):
-    #     pass
+    def get_txn_report(self, sim_duration:float):
+        av_txn_latency = self._get_average_txn_proc_time()
+        txn_throughput = self.get_transaction_throughput(sim_duration)
+        txn_proc_ratio = self.get_transactions_processing_ratio()
+        tx_metrics = {}
+        tx_metrics["av_txn_latency"] = av_txn_latency
+        tx_metrics["txn_throughput"] = txn_throughput
+        tx_metrics["txn_proc_ratio"] = txn_proc_ratio
 
-    # def _get_peer_block_report(self):
-    #     pass
-
-    # def _get_average_txn_dist_latency(self):
-        
-    #     txn_prop = self.tx_prop
+        with open(f"report/txn.json", 'w') as f:
+            f.write(json.dumps(tx_metrics))
 
     def _get_average_txn_proc_time(self):
         
@@ -182,14 +185,14 @@ class ReportEngine:
             
             i = 0
             node_time = {}
-        with open("latencies.csv", "w") as csvfile:
+        with open("reports/latencies.csv", "w") as csvfile:
             my_wirter = writer(csvfile, delimiter=",")
             my_wirter.writerows(latencies.items())
         return latencies
 
 
 
-    def _get_average_finality_time(self, delta=6, path="reports"):
+    def _get_average_finality_time(self, delta=6):
         # time difference between the creation of a block and six consecutive blocks
         t1 = 0.0
         t2 = 0.0
@@ -212,7 +215,7 @@ class ReportEngine:
             
             i1 += 1
             i2 = i1 + delta
-        with open("finality.csv", "w") as csvfile:
+        with open("reports/finality.csv", "w") as csvfile:
             my_wirter = writer(csvfile, delimiter=",")
             my_wirter.writerows(finality_times.items())
         return finality_times
