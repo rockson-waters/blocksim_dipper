@@ -3,11 +3,11 @@ from datetime import datetime
 import json
 import random
 from ast import literal_eval as make_tuple
-from typing import List
+from typing import List, overload
 import numpy as np
 import scipy.stats
 
-from blocksim.models.node import Node
+
 try:
     from Crypto.Hash import keccak
 
@@ -19,7 +19,7 @@ except ImportError:
     def keccak_256(value):
         return _sha3.keccak_256(value).digest()
 
-
+@overload
 def get_latency_delay(env, origin: str, destination: str, n=1):
     distribution = env.delays['LATENCIES'][origin][destination]
     # Convert latency in ms to seconds
@@ -31,6 +31,16 @@ def get_latency_delay(env, origin: str, destination: str, n=1):
         return latencies
 
 
+def get_latency_delay(origin: str, destination: str):
+    key = f"{origin}_{destination}"
+    latency:float = sim_data["latencies"].get(key)
+    if latency is None:
+        key = f"{destination}_{origin}"
+        latency = sim_data["latencies"].get(key)
+    latency = latency / 1000
+    return round(latency, 4)
+
+@overload
 def get_received_delay(env, message_size: float, origin: str, destination: str, n=1):
     """
     It calculates and returns a delay when receiving/downloading a message with a certain size (`message_size`)
@@ -51,6 +61,11 @@ def get_received_delay(env, message_size: float, origin: str, destination: str, 
         return delay
 
 
+def get_received_delay(message_size: float, origin: str, destination: str):
+    return get_sent_or_received_delay(message_size, origin, destination)
+
+
+@overload
 def get_sent_delay(env, message_size: float, origin: str, destination: str, n=1):
     """
     It calculates and returns a delay when sending/uploading a message with a certain size (`message_size`)
@@ -70,6 +85,19 @@ def get_sent_delay(env, message_size: float, origin: str, destination: str, n=1)
     else:
         return delay
 
+
+def get_sent_delay(message_size: float, origin: str, destination: str):
+    return get_sent_or_received_delay(message_size, origin, destination)
+
+def get_sent_or_received_delay(message_size: float, origin:str, destination:str):
+    key = f"{origin}_{destination}"
+    throughput = sim_data["throughputs"].get(key)
+    if throughput is None:
+        key = f"{destination}_{origin}"
+        throughput = sim_data["throughputs"].get(key)
+    delay = (message_size * 8) / throughput
+    return round(delay, 3)
+    
 
 def _calc_throughput(distribution: dict, message_size: float, n):
     rand_throughputs = get_random_values(distribution, n)
@@ -127,30 +155,39 @@ def encode_int32(v):
 
 rng = np.random.default_rng()
 sim_data = {}
-all_nodes = {}
 
 def _read_json_file(file_location:str):
         with open(file_location) as f:
             return json.load(f)
 
 
-def initialize_node_values(folder_path:str="out"):
+def initialize_node_values(folder_path:str="/home/rockson/blocksim_dipper/blocksim/out"):
     node_properties = dict(_read_json_file(f"{folder_path}/node_properties.json"))
     loc_names = list(_read_json_file(f"{folder_path}/loc_names.json"))
     latencies = dict(_read_json_file(f"{folder_path}/latencies.json"))
-    throughputs = dict(_read_json_file(f"{folder_path}/throughput.json"))
-    solutions = dict(_read_json_file(f"{folder_path}/solutions.json"))
+    throughputs = dict(_read_json_file(f"{folder_path}/throughputs.json"))
+    solutions = dict(_read_json_file(f"{folder_path}/solution.json"))
 
-    sim_data["number_of_nodes"] = num_nodes
+    sim_data["node_properties"] = node_properties
+    sim_data["loc_names"] = loc_names
+    sim_data["latencies"] = latencies
+    sim_data["throughputs"] = throughputs
+    sim_data["solutions"] = solutions
+
+    sim_data["number_of_nodes"] = len(sim_data["node_properties"])
     sim_data["dim"] = get_average_number_of_neighbours(sim_data["number_of_nodes"])
     sim_data["lb"] = [0] * sim_data["dim"] # Lower bound
     sim_data["ub"] = [sim_data["number_of_nodes"] - 1] * sim_data["dim"] # Upper bound
-    sim_data["c_max"] = get_max_compute_capacity(all_peers) # maximum compute capacity in the network
     sim_data["current_node_id"] = 0
-    pass
+    return sim_data
+
+def get_average_number_of_neighbours(num_nodes:int) -> int:
+        n = num_nodes
+        M = ((n - 1) / n) * np.log2(n)
+        return int(np.ceil(M))
 
 def get_node_by_id(node_id:int):
-    node = all_nodes.get(node_id)
+    node = sim_data["node_properties"].get(node_id)
     return node
 
 def get_nodes(node_ids:list):
@@ -160,21 +197,32 @@ def get_nodes(node_ids:list):
         nodes.append(node)
     return nodes
 
-def get_optimum_neighbours(current_node_id:int):
-    pass
+def get_optimum_neighbours(current_node_id:int, nodes_dict:dict):
+    solution = sim_data["solutions"]
+    neigh_id_list = solution[str(current_node_id)]
+    neighbours = []
+    for i in neigh_id_list:
+        node = nodes_dict.get(i)
+        if node is not None:
+            neighbours.append(nodes_dict[i])
+    return neighbours
 
-def get_random_neighbours(num:int, current_node_id:int):
+
+def get_random_neighbours(num:int, current_node_id:int, nodes_dict:dict):
     sim_data["current_node_id"] = current_node_id
-    a = np.random.randint(0, sim_data["number_of_nodes"], sim_data["dim"])
+    a = np.random.randint(0, sim_data["number_of_nodes"], num)
     a = _check_and_fix_solution(a)
     neighbours = []
-
+    for i in a:
+        node = nodes_dict.get(i)
+        if node is not None:
+            neighbours.append(nodes_dict[i])
     return neighbours
 
 def _check_and_fix_solution(solution:np.ndarray):
     
     solution = solution.astype(int)
-    solution = solution.clip(sim_data["lb"], sim_data["ub"]) 
+    solution = solution.clip(sim_data["lb"][:len(solution)], sim_data["ub"][:len(solution)]) 
     b = set(solution)
 
     if b.__contains__(sim_data["current_node_id"]):

@@ -15,6 +15,7 @@ class ETHNode(Node):
                  network: Network,
                  location: str,
                  address: str,
+                 node_id_num:int,
                  hashrate=0,
                  is_mining=False):
         # Create the Ethereum genesis block and init the chain
@@ -27,6 +28,7 @@ class ETHNode(Node):
                          network,
                          location,
                          address,
+                         node_id_num,
                          chain,
                          consensus,
                          hashrate,

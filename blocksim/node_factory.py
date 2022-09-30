@@ -27,6 +27,47 @@ class NodeFactory:
         return blockchain_switcher.get(
             self._world.blockchain, lambda: "Invalid blockchain")(miners, non_miners)
 
+    def create_nodes_from_read_data(self, read_data:dict):
+        blockchain_switcher = {
+            'bitcoin': self._create_bitcoin_nodes_from_read_data,
+            'ethereum': self._create_ethereum_nodes_from_read_data
+        }
+        return blockchain_switcher.get(
+            self._world.blockchain, lambda: "Invalid blockchain")(read_data)
+
+    def _create_bitcoin_nodes_from_read_data(self, peers_data:dict):
+        nodes_list = {}
+        node_props = peers_data["node_properties"]
+        for k,v in node_props.items():
+            hashrate = v.compute_capacity *10**6
+            new = BTCNode(self._world.env,
+                              self._network,
+                              v["location"],
+                              v["node_id"],
+                              int(k),
+                              hashrate,
+                              v["is_mining"])
+            nodes_list[int(k)] = new
+        print(f'NodeFactory: Created {len(nodes_list)} bitcoin nodes')
+        return nodes_list
+
+
+    def _create_ethereum_nodes_from_read_data(self, peers_data:dict):
+        nodes_list = {}
+        node_props = peers_data["node_properties"]
+        for k,v in node_props.items():
+            hashrate = v["compute_capacity"] *10**6
+            new = ETHNode(self._world.env,
+                              self._network,
+                              v["location"],
+                              v["node_id"],
+                              int(k),
+                              hashrate,
+                              v["is_mining"])
+            nodes_list[int(k)] = new
+        print(f'NodeFactory: Created {len(nodes_list)} ethereum nodes')
+        return nodes_list
+
     def create_bitcoin_nodes(self, miners, non_miners):
         node_id = 0  # Unique ID for each node
         # Create the miners nodes

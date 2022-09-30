@@ -18,7 +18,8 @@ class Network:
 
     def add_node(self, node):
         self._nodes[node.address] = node
-        self.total_hashrate += node.hashrate
+        if node.is_mining:
+            self.total_hashrate += node.hashrate
 
     def _init_lists(self):
         for add, node in self._nodes.items():
@@ -78,8 +79,9 @@ class Connection:
         self.destination_node = destination_node
 
     def latency(self, envelope):
-        latency_delay = get_latency_delay(
-            self.env, self.origin_node.location, self.destination_node.location)
+        latency_delay = get_latency_delay(self.origin_node.address, self.destination_node.address)
+        # latency_delay = get_latency_delay(
+        #     self.env, self.origin_node.location, self.destination_node.location)
         yield self.env.timeout(latency_delay)
         self.store.put(envelope)
 

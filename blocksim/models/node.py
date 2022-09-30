@@ -33,6 +33,7 @@ class Node:
                  network: Network,
                  location: str,
                  address: str,
+                 node_id_num:int,
                  chain: Chain,
                  consensus: Consensus,
                  hashrate:float,
@@ -41,6 +42,7 @@ class Node:
         self.network = network
         self.location = location
         self.address = address
+        self.node_id_num = node_id_num
         self.chain = chain
         self.consensus = consensus
         self.active_sessions = {}
@@ -95,8 +97,9 @@ class Node:
         during all the simulation."""
         origin_node = connection.origin_node
         destination_node = connection.destination_node
-        latency = get_latency_delay(
-            self.env, origin_node.location, destination_node.location)
+        latency = get_latency_delay(origin_node.address, destination_node.address)
+        # latency = get_latency_delay(
+        #     self.env, origin_node.location, destination_node.location)
         tcp_handshake_delay = 3*latency
         yield self.env.timeout(tcp_handshake_delay)
         self.env.process(destination_node.listening_node(connection))
@@ -131,11 +134,12 @@ class Node:
         while True:
             # Get the messages from  connection
             envelope = yield connection.get()
-            origin_loc = envelope.origin.location
-            dest_loc = envelope.destination.location
+            origin_loc = envelope.origin.address
+            dest_loc = envelope.destination.address
             message_size = envelope.msg['size']
-            received_delay = get_received_delay(
-                self.env, message_size, origin_loc, dest_loc)
+            received_delay = get_received_delay(message_size, origin_loc, dest_loc)
+            # received_delay = get_received_delay(
+            #     self.env, message_size, origin_loc, dest_loc)
             yield self.env.timeout(received_delay)
 
             # Monitor the transaction propagation on Ethereum
@@ -194,8 +198,9 @@ class Node:
             delay = self.consensus.validate_transaction()
             yield self.env.timeout(delay)
 
-        upload_transmission_delay = get_sent_delay(
-            self.env, msg['size'], origin_node.location, destination_node.location)
+        upload_transmission_delay = get_sent_delay(msg['size'], origin_node.address, destination_node.address)
+        # upload_transmission_delay = get_sent_delay(
+        #     self.env, msg['size'], origin_node.location, destination_node.location)
         yield self.env.timeout(upload_transmission_delay)
 
         envelope = Envelope(msg, time(self.env), destination_node, origin_node)
@@ -222,9 +227,10 @@ class Node:
                     blocks.update({f'{block_hash[:8]}': self.env.now})
                 self.env.data['block_propagation'][f'{origin_node.address}_{destination_node.address}'].update(
                     blocks)
-
-            upload_transmission_delay = get_sent_delay(
-                self.env, msg['size'], origin_node.location, destination_node.location)
+            
+            upload_transmission_delay = get_sent_delay(msg['size'], origin_node.address, destination_node.address)
+            # upload_transmission_delay = get_sent_delay(
+            #     self.env, msg['size'], origin_node.location, destination_node.location)
             yield self.env.timeout(upload_transmission_delay)
             envelope = Envelope(msg, time(self.env),
                                 destination_node, origin_node)

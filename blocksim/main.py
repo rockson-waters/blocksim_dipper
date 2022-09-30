@@ -2,12 +2,14 @@ import time
 import os
 from json import dumps as dump_json
 from blocksim.report_engine import ReportEngine
+from blocksim.utils import get_optimum_neighbours, get_random_neighbours, initialize_node_values
 from blocksim.world import SimulationWorld
 from blocksim.node_factory import NodeFactory
 from blocksim.transaction_factory import TransactionFactory
 from blocksim.models.network import Network
 
-
+RNS = True
+AV_NEIGHBOURS = 4
 
 def write_report(world):
     path = 'output/report.json'
@@ -42,6 +44,8 @@ def run_model():
     now = int(time.time())  # Current time
     duration = 3600  # seconds
 
+    input_data = initialize_node_values()
+
     world = SimulationWorld(
         duration,
         now,
@@ -75,25 +79,36 @@ def run_model():
 
     node_factory = NodeFactory(world, network)
     # Create all nodes
-    nodes_list = node_factory.create_nodes(miners, non_miners)
+    # nodes_list = node_factory.create_nodes(miners, non_miners)
+    nodes_dict = node_factory.create_nodes_from_read_data(input_data)
     # Start the network heartbeat
     world.env.process(network.start_heartbeat())
     # Full Connect all nodes
-    for node in nodes_list:
-        node.connect(nodes_list)
+
+    neigh = []
+    if RNS == True:
+        for node_id, node in nodes_dict.items():
+           neigh = get_random_neighbours(AV_NEIGHBOURS, node_id, nodes_dict)
+           node.connect(neigh)
+    else:
+        for node_id, node in nodes_dict.items():
+           neigh = get_optimum_neighbours(node_id, nodes_dict)
+           node.connect(neigh)
+
+        
 
     transaction_factory = TransactionFactory(world)
-    transaction_factory.broadcast(100, 400, 15, nodes_list)
+    transaction_factory.broadcast(100, 400, 15, nodes_dict)
 
     world.start_simulation()
 
-    report_node_chain(world, nodes_list)
-    reports = ReportEngine(nodes_list, world.env.data)
+    report_node_chain(world, nodes_dict)
+    reports = ReportEngine(nodes_dict, world.env.data)
     av_txn_latency = reports._get_average_txn_proc_time()
     txn_throughput = reports.get_transaction_throughput(duration)
     txn_proc_ratio = reports.get_transactions_processing_ratio()
     block_report = reports.get_global_block_report()
-    print(nodes_list)
+    print(nodes_dict)
     write_report(world)
 
 
