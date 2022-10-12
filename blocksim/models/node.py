@@ -149,6 +149,8 @@ class Node:
                 txs = {}
                 for tx in envelope.msg['transactions']:
                     initial_time = tx_propagation.get(tx.hash[:8], None)
+                    if type(initial_time) is tuple:
+                        initial_time = initial_time[0]
                     if initial_time is not None:
                         propagation_time = self.env.now - initial_time
                         txs.update({f'{tx.hash[:8]}': (initial_time, propagation_time)})

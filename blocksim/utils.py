@@ -37,8 +37,8 @@ def get_latency_delay(origin: str, destination: str):
     if latency is None:
         key = f"{destination}_{origin}"
         latency = sim_data["latencies"].get(key)
-    latency = latency / 1000
-    return round(latency, 4)
+    # latency = latency / 1000
+    return round(latency, 6)
 
 @overload
 def get_received_delay(env, message_size: float, origin: str, destination: str, n=1):
@@ -96,7 +96,13 @@ def get_sent_or_received_delay(message_size: float, origin:str, destination:str)
         key = f"{destination}_{origin}"
         throughput = sim_data["throughputs"].get(key)
     delay = (message_size * 8) / throughput
-    return round(delay, 3)
+    
+    if delay < 0:
+        raise RuntimeError(
+            f'Negative sent delay ({delay}) to origin {origin} and destination {destination}')
+    else:
+        return delay
+    
     
 
 def _calc_throughput(distribution: dict, message_size: float, n):
@@ -106,7 +112,7 @@ def _calc_throughput(distribution: dict, message_size: float, n):
         delay = (message_size * 8) / throughput
         delays.append(delay)
     if len(delays) == 1:
-        return round(delays[0], 3)
+        return round(delays[0], 6)
     else:
         return delays
 
@@ -161,7 +167,7 @@ def _read_json_file(file_location:str):
             return json.load(f)
 
 
-def initialize_node_values(folder_path:str="/home/rockson/blocksim_dipper/blocksim/out"):
+def initialize_node_values(folder_path:str="blocksim/out"):
     node_properties = dict(_read_json_file(f"{folder_path}/node_properties.json"))
     loc_names = list(_read_json_file(f"{folder_path}/loc_names.json"))
     latencies = dict(_read_json_file(f"{folder_path}/latencies.json"))
@@ -201,15 +207,28 @@ def get_optimum_neighbours(current_node_id:int, nodes_dict:dict):
     solution = sim_data["solutions"]
     neigh_id_list = solution[str(current_node_id)]
     neighbours = []
+    inbound_id_list = []
+    inbound_neigh = []
+    # get neighbours assigned to current peer
     for i in neigh_id_list:
         node = nodes_dict.get(i)
         if node is not None:
             neighbours.append(nodes_dict[i])
-    return neighbours
+    
+    # get other peers which have selected current peer as neighbour
+    for k,v in solution.items():
+        if current_node_id in v:
+            inbound_id_list.append(int(k))
+
+            node = nodes_dict.get(int(k))
+            if node is not None:
+                inbound_neigh.append(nodes_dict[int(k)])
+    return neighbours + inbound_neigh
 
 
 def get_random_neighbours(num:int, current_node_id:int, nodes_dict:dict):
     sim_data["current_node_id"] = current_node_id
+    # neighbour ids
     a = np.random.randint(0, sim_data["number_of_nodes"], num)
     a = _check_and_fix_solution(a)
     neighbours = []
@@ -217,7 +236,28 @@ def get_random_neighbours(num:int, current_node_id:int, nodes_dict:dict):
         node = nodes_dict.get(i)
         if node is not None:
             neighbours.append(nodes_dict[i])
-    return neighbours
+
+    return neighbours, a
+
+def update_random_neighbours(current_node_id:int, nodes_dict:dict, solution:dict):
+    
+    neighbours = []
+    inbound_id_list = []
+    inbound_neigh = []
+
+    # get neighbours assigned to current peer
+
+    neighbours = solution[current_node_id][1]
+
+    # get other peers which have selected current peer as neighbour
+    for k,v in solution.items():
+        if current_node_id in v[0]:
+            inbound_id_list.append(int(k))
+
+            node = nodes_dict.get(int(k))
+            if node is not None:
+                inbound_neigh.append(nodes_dict[int(k)])
+    return neighbours + inbound_neigh
 
 def _check_and_fix_solution(solution:np.ndarray):
     

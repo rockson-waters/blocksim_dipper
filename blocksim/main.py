@@ -2,7 +2,7 @@ import time
 import os
 from json import dumps as dump_json
 from blocksim.report_engine import ReportEngine
-from blocksim.utils import get_optimum_neighbours, get_random_neighbours, initialize_node_values
+from blocksim.utils import get_optimum_neighbours, get_random_neighbours, initialize_node_values, update_random_neighbours
 from blocksim.world import SimulationWorld
 from blocksim.node_factory import NodeFactory
 from blocksim.transaction_factory import TransactionFactory
@@ -42,7 +42,7 @@ def report_node_chain(world, nodes_list):
 
 def run_model():
     now = int(time.time())  # Current time
-    duration = 3600  # seconds
+    duration = 3600*3  # seconds
 
     input_data = initialize_node_values()
 
@@ -86,10 +86,15 @@ def run_model():
     # Full Connect all nodes
 
     neigh = []
-    if RNS == True:
+    if RNS:
+        solution = {}
         for node_id, node in nodes_dict.items():
-           neigh = get_random_neighbours(AV_NEIGHBOURS, node_id, nodes_dict)
-           node.connect(neigh)
+           neigh, neigh_ids = get_random_neighbours(AV_NEIGHBOURS, node_id, nodes_dict)
+           solution[node_id] = (neigh_ids, neigh)
+        #    node.connect(neigh)
+        for node_id, node in nodes_dict.items():
+            neigh = update_random_neighbours(node_id, nodes_dict, solution)
+            node.connect(neigh)
     else:
         for node_id, node in nodes_dict.items():
            neigh = get_optimum_neighbours(node_id, nodes_dict)
@@ -102,12 +107,12 @@ def run_model():
 
     world.start_simulation()
 
-    report_node_chain(world, nodes_dict)
-    reports = ReportEngine(nodes_dict, world.env.data)
+    report_node_chain(world, list(nodes_dict.values()))
+    reports = ReportEngine(list(nodes_dict.values()), world.env.data)
     reports.get_txn_report(duration)
     reports._get_average_finality_time()
     reports._get_network_wide_latency()
-    print(nodes_dict)
+    # print(nodes_dict)
     write_report(world)
 
 

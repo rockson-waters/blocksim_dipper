@@ -8,9 +8,12 @@ class ReportEngine:
     
     def __init__(self, nodes:list, env_data=None):
         self.nodes = nodes
-        # Select any node since all peers have the same chain
         self.any_node:Node.Node = self.nodes[0]
-        self.blocks = self.any_node.blocks_in_chain
+        for n in nodes:
+            # pick out the node with the longest chain
+            if n.chain.head.header.number > self.any_node.chain.head.header.number:
+                self.any_node = n
+                self.blocks = self.any_node.blocks_in_chain
 
         self.proc_times = []
         self.all_txns = []
@@ -27,7 +30,7 @@ class ReportEngine:
         self._get_block_number_and_hash(self.blocks)
         self._get_blocks_prop_times(self.nodes, self.block_prop)
         self._get_block_receive_times(self.nodes, self.block_prop)
-        self._get_network_wide_latency(self.block_num_hash)
+        self._get_network_wide_latency()
         self._get_average_finality_time()
 
     def _get_block_number_and_hash(self, blocks):
@@ -118,7 +121,7 @@ class ReportEngine:
         tx_metrics["txn_throughput"] = txn_throughput
         tx_metrics["txn_proc_ratio"] = txn_proc_ratio
 
-        with open(f"report/txn.json", 'w') as f:
+        with open(f"reports/txn.json", 'w') as f:
             f.write(json.dumps(tx_metrics))
 
     def _get_average_txn_proc_time(self):
@@ -147,7 +150,7 @@ class ReportEngine:
             if (block_hash == block.header.hash[:8]):
                 return block.header.timestamp
 
-    def _get_network_wide_latency(self, block_num_hash:dict, alpha=0.8):
+    def _get_network_wide_latency(self, alpha=0.8):
         """Calculates the average block distribution time
 
         Args:
@@ -164,7 +167,7 @@ class ReportEngine:
         nodes = self.nodes
         i = 0
 
-        for num, hash in block_num_hash.items():
+        for num, hash in self.block_num_hash.items():
             block_creation_time = self._get_block_creation_time(hash)
             for node in nodes:
                 rec_time = block_receive_time[node.address] # dictionary of block_hash and prop time
@@ -185,7 +188,7 @@ class ReportEngine:
             
             i = 0
             node_time = {}
-        with open("reports/latencies.csv", "w") as csvfile:
+        with open("reports/latencies.csv", "a") as csvfile:
             my_wirter = writer(csvfile, delimiter=",")
             my_wirter.writerows(latencies.items())
         return latencies
@@ -215,7 +218,7 @@ class ReportEngine:
             
             i1 += 1
             i2 = i1 + delta
-        with open("reports/finality.csv", "w") as csvfile:
+        with open("reports/finality.csv", "a") as csvfile:
             my_wirter = writer(csvfile, delimiter=",")
             my_wirter.writerows(finality_times.items())
         return finality_times
