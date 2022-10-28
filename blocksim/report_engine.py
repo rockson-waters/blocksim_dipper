@@ -51,6 +51,7 @@ class ReportEngine:
             # Key has format sender_receiver
             for key in keys:
                 split = str.split(key, "_")
+                split = [f"{split[0]}_{split[1]}", f"{split[2]}_{split[3]}"]
                 if ((split[1] == address) and (len(block_prop[key]) > 0) ):
                     for k,v in block_prop[key].items():
                         if type(v) is tuple:
@@ -72,6 +73,7 @@ class ReportEngine:
             # Key has format sender_receiver
             for key in keys:
                 split = str.split(key, "_")
+                split = [f"{split[0]}_{split[1]}", f"{split[2]}_{split[3]}"]
                 if ((split[1] == address) and (len(block_prop[key]) > 0) ):
                     for k,v in block_prop[key].items():
                         if type(v) is tuple:
@@ -180,6 +182,8 @@ class ReportEngine:
                 j = 0
                 s = sorted(node_time.items(), key=lambda x:x[1])
                 t = dict(s)
+                latency = t[len(t) - 1]
+                target_num_nodes = ceil(alpha * len(t)) - 1 # Exclude the node which mined the block
                 for x in t.values():
                     if (j == (target_num_nodes - 1)):
                         latency = x - block_creation_time

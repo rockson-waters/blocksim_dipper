@@ -9,7 +9,8 @@
             "type": "python",
             "request": "launch",
             "module": "blocksim.main",
-            "justMyCode": true
+            "justMyCode": true,
+            //"args": [">", "output.log"]
         }
     ]
 }

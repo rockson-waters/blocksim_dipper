@@ -103,17 +103,16 @@ def run_model():
         
 
     transaction_factory = TransactionFactory(world)
-    transaction_factory.broadcast(100, 400, 15, nodes_dict)
+    transaction_factory.broadcast(10, 40, 15, nodes_dict)
 
     xyz = time.time()
     world.start_simulation()
     print(time.time() - xyz)
     
-    # report_node_chain(world, list(nodes_dict.values()))
+    report_node_chain(world, list(nodes_dict.values()))
     reports = ReportEngine(list(nodes_dict.values()), world.env.data)
     reports.get_txn_report(duration)
-    reports._get_average_finality_time()
-    reports._get_network_wide_latency()
+
     # print(nodes_dict)
     # write_report(world)
     xyz = 1
