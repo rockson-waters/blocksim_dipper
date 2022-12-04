@@ -102,7 +102,7 @@ class Chain:
         """Get the children of a block"""
         return [self.get_block(h) for h in self.get_child_hashes(block.header.hash)]
 
-    def   add_block(self, block):
+    def add_block(self, block):
         """Call upon receiving a block"""
         # Is the block being added to the heap?
         if block.header.prevhash == self._head_hash:

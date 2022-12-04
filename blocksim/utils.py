@@ -216,6 +216,7 @@ def get_optimum_neighbours(current_node_id:int, nodes_dict:dict):
             neighbours.append(nodes_dict[i])
     
     # get other peers which have selected current peer as neighbour
+    all_neigh_list = None
     for k,v in solution.items():
         if current_node_id in v:
             inbound_id_list.append(int(k))
@@ -223,7 +224,11 @@ def get_optimum_neighbours(current_node_id:int, nodes_dict:dict):
             node = nodes_dict.get(int(k))
             if node is not None:
                 inbound_neigh.append(nodes_dict[int(k)])
-    return neighbours + inbound_neigh
+            all_neigh = set(neighbours + inbound_neigh)
+            all_neigh_list = list(all_neigh)
+    if all_neigh_list is None:
+        return neighbours
+    return all_neigh_list
 
 
 def get_random_neighbours(num:int, current_node_id:int, nodes_dict:dict):

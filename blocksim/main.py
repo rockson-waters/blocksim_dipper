@@ -1,3 +1,4 @@
+from pickle import FALSE
 import time
 import os
 from json import dumps as dump_json
@@ -8,7 +9,7 @@ from blocksim.node_factory import NodeFactory
 from blocksim.transaction_factory import TransactionFactory
 from blocksim.models.network import Network
 
-RNS = True
+RNS = False
 AV_NEIGHBOURS = 7
 
 def write_report(world):
@@ -42,7 +43,7 @@ def report_node_chain(world, nodes_list):
 
 def run_model():
     now = int(time.time())  # Current time
-    duration = 3600*3  # seconds
+    duration = 3600*6  # seconds
 
     input_data = initialize_node_values()
 

@@ -1,5 +1,7 @@
 import json
 from math import ceil
+
+import numpy
 from blocksim.models import node as Node
 from csv import writer
 
@@ -9,6 +11,8 @@ class ReportEngine:
     def __init__(self, nodes:list, env_data=None):
         self.nodes = nodes
         self.any_node:Node.Node = self.nodes[0]
+        self.blocks = self.any_node.blocks_in_chain
+
         for n in nodes:
             # pick out the node with the longest chain
             if n.chain.head.header.number > self.any_node.chain.head.header.number:
@@ -54,8 +58,36 @@ class ReportEngine:
                 split = [f"{split[0]}_{split[1]}", f"{split[2]}_{split[3]}"]
                 if ((split[1] == address) and (len(block_prop[key]) > 0) ):
                     for k,v in block_prop[key].items():
-                        if type(v) is tuple:
-                            blocks_and_times[k] = v[0] + v[1]
+                        if blocks_and_times.get(k) is None:
+                            if type(v) is tuple:
+                                for b in v:
+                                    is_float_val = type(b) is numpy.float64
+                                    if is_float_val:
+                                        blocks_and_times[k] = v[1] + v[0]
+                                    else:
+                                        c = b
+                                        a = c[0]
+                                        is_float_val = type(a) is numpy.float64
+                                        while is_float_val is False:
+                                            c = a
+                                            a = a[0]
+                                            is_float_val = type(a) is numpy.float64
+                                        blocks_and_times[k] = c[1] + c[0]
+                                        break
+                            # for b in list(v):
+                            #     is_float_val = type(b) is numpy.float64
+                            #     while is_float_val is False:
+                            #         b = b[0]
+                            #         is_float_val = type(b) is numpy.float64
+
+
+
+                            # if type(v) is tuple:
+                            #     blocks_and_times[k] = v[0] + v[1]
+                            #     if (type(blocks_and_times[k]) is not numpy.float64):
+                            #         a = v[1]
+                            #         blocks_and_times[k] = a[0] + a[1]
+                            
 
             block_receive_time_all_node[address] = blocks_and_times
         self.block_receive_times = block_receive_time_all_node
@@ -76,8 +108,36 @@ class ReportEngine:
                 split = [f"{split[0]}_{split[1]}", f"{split[2]}_{split[3]}"]
                 if ((split[1] == address) and (len(block_prop[key]) > 0) ):
                     for k,v in block_prop[key].items():
-                        if type(v) is tuple:
-                            blocks_and_times[k] = v[1]
+                        if blocks_and_times.get(k) is None:
+                            if type(v) is tuple:
+                                for b in v:
+                                    is_float_val = type(b) is numpy.float64
+                                    if is_float_val:
+                                        blocks_and_times[k] = v[1]
+                                    else:
+                                        c = b
+                                        a = c[0]
+                                        is_float_val = type(a) is numpy.float64
+                                        while is_float_val is False:
+                                            c = a
+                                            a = a[0]
+                                            is_float_val = type(a) is numpy.float64
+                                        blocks_and_times[k] = c[1]
+                                        break
+
+
+                                # blocks_and_times[k] = v[1]
+                                # if (type(blocks_and_times[k]) is numpy.ndarray):
+                                #     a = v[0]
+                                #     blocks_and_times[k] = a[1]  
+            
+            
+            # for k,v in blocks_and_times.items():
+            #     if (type(blocks_and_times[k]) is numpy.ndarray):
+            #                         a = v[0]
+            #                         blocks_and_times[k] = a[1]
+            #     if (blocks_and_times[k] > 9999):
+            #         blocks_and_times.pop(k)
 
             block_props_all_node[address] = blocks_and_times
         self.block_props = block_props_all_node

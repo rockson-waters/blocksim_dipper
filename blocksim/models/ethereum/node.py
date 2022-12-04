@@ -175,11 +175,45 @@ class ETHNode(Node):
         """Specify one or more new blocks which have appeared on the network.
         To be maximally helpful, nodes should inform peers of all blocks that
         they may not be aware of."""
+
         new_blocks_hashes = {}
         for block in new_blocks:
             new_blocks_hashes[block.header.hash] = block.header.number
         new_blocks_msg = self.network_message.new_blocks(new_blocks_hashes)
         self.env.process(self.broadcast(new_blocks_msg))
+
+    def broadcast_received_blocks(self, new_blocks: list):
+        """Specify one or more new blocks which have appeared on the network.
+        To be maximally helpful, nodes should inform peers of all blocks that
+        they may not be aware of."""
+        new_blocks_hashes = {}
+        multicast_nodes = {}
+
+        
+        for block in new_blocks:
+            new_blocks_hashes[block.header.hash] = block.header.number
+
+            for node_address, node in self.active_sessions.items():
+                # Checks if the block was previously sent
+                if any({block.header.hash} & node.get('knownBlocks')):
+                    print(
+                        f'{self.address} at {time(self.env)}: Block {block.header.hash[:8]} was already sent to {node_address}')
+                    # new_blocks.remove(block)
+                else:
+                    multicast_nodes[node_address] = node
+                    self._mark_block(block.header.hash, node_address)
+            # Only send if certain nodes don't have the block
+            if multicast_nodes:
+                print(
+                    f'{self.address} at {time(self.env)}: {len(new_blocks)} blocks ready to be sent')
+                new_blocks_msg = self.network_message.new_blocks(new_blocks_hashes)
+                self.env.process(self.multicast(new_blocks_msg, multicast_nodes))
+            multicast_nodes = {}
+            new_blocks_hashes = {}
+
+
+
+
 
     def _receive_new_blocks(self, envelope):
         """Handle new blocks received.
@@ -193,9 +227,10 @@ class ETHNode(Node):
         for block_hash, block_number in new_blocks.items():
             if self.chain.get_block(block_hash) is None:
                 block_numbers.append(block_number)
-        lowest_block_number = min(block_numbers)
-        self.request_headers(
-            lowest_block_number, len(new_blocks), envelope.origin.address)
+        if len(block_numbers) > 0:
+            lowest_block_number = min(block_numbers)
+            self.request_headers(
+                lowest_block_number, len(new_blocks), envelope.origin.address)
 
     def request_headers(self, block_number: int, max_headers: int, destination_address: str):
         """Request a node (identified by the `destination_address`) to return block headers.
@@ -267,3 +302,4 @@ class ETHNode(Node):
                     del self.temp_headers[block_hash]
                     print(
                         f'{self.address} at {time(self.env)}: Block assembled and added to the tip of the chain  {new_block.header}')
+                    self.broadcast_received_blocks([new_block])
