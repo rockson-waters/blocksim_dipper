@@ -302,4 +302,4 @@ class ETHNode(Node):
                     del self.temp_headers[block_hash]
                     print(
                         f'{self.address} at {time(self.env)}: Block assembled and added to the tip of the chain  {new_block.header}')
-                    self.broadcast_received_blocks([new_block])
+                    # self.broadcast_received_blocks([new_block])

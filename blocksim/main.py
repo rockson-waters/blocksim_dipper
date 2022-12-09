@@ -10,7 +10,9 @@ from blocksim.transaction_factory import TransactionFactory
 from blocksim.models.network import Network
 
 RNS = False
-AV_NEIGHBOURS = 7
+AV_NEIGHBOURS = 9
+NUMBER_OF_RUNS = 100
+NETWORK_SIZE = 500
 
 def write_report(world):
     path = 'output/report.json'
@@ -41,11 +43,11 @@ def report_node_chain(world, nodes_list):
         }
 
 
-def run_model():
+def run_model(run_id:int, algo:str, num_nodes:int):
     now = int(time.time())  # Current time
     duration = 3600*6  # seconds
 
-    input_data = initialize_node_values()
+    input_data = initialize_node_values(algo=algo, run_id=run_id, num=num_nodes)
 
     world = SimulationWorld(
         duration,
@@ -58,25 +60,6 @@ def run_model():
 
     # Create the network
     network = Network(world.env, 'NetworkXPTO')
-
-    miners = {
-        'Ohio': {
-            'how_many': 0,
-            'mega_hashrate_range': "(20, 40)"
-        },
-        'Tokyo': {
-            'how_many': 2,
-            'mega_hashrate_range': "(20, 40)"
-        }
-    }
-    non_miners = {
-        'Tokyo': {
-            'how_many': 1
-        },
-        'Ireland': {
-            'how_many': 1
-        }
-    }
 
     node_factory = NodeFactory(world, network)
     # Create all nodes
@@ -106,9 +89,9 @@ def run_model():
     transaction_factory = TransactionFactory(world)
     transaction_factory.broadcast(10, 40, 15, nodes_dict)
 
-    xyz = time.time()
+    
     world.start_simulation()
-    print(time.time() - xyz)
+    
     
     report_node_chain(world, list(nodes_dict.values()))
     reports = ReportEngine(list(nodes_dict.values()), world.env.data)
@@ -120,4 +103,14 @@ def run_model():
 
 
 if __name__ == '__main__':
-    run_model()
+    xyz = time.time()
+    algos = ["mst"]#, "RNS", "CL_PSO", "HPSO", "PPSO", "mst"]
+    for algo in algos:
+        if algo == "RNS":
+            RNS = True
+            # RNS generates its own neighbours, therefore, the value of algo needed to read solution files is 
+            # irrelevant. BasePSO has been selected to avoid exceptions. Any other value could have been chosen
+            algo = "BasePSO" 
+        for n in range(0, NUMBER_OF_RUNS, 1):
+            run_model(algo=algo, run_id=n, num_nodes=NETWORK_SIZE)
+    print(time.time() - xyz)

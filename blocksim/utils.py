@@ -167,12 +167,12 @@ def _read_json_file(file_location:str):
             return json.load(f)
 
 
-def initialize_node_values(folder_path:str="blocksim/out"):
-    node_properties = dict(_read_json_file(f"{folder_path}/node_properties.json"))
+def initialize_node_values(folder_path:str="blocksim/out/", run_id=0,algo='BasePSO', num=100):
+    node_properties = dict(_read_json_file(f"{folder_path}/{num}/{run_id}_node_properties.json"))
     loc_names = list(_read_json_file(f"{folder_path}/loc_names.json"))
-    latencies = dict(_read_json_file(f"{folder_path}/latencies.json"))
-    throughputs = dict(_read_json_file(f"{folder_path}/throughputs.json"))
-    solutions = dict(_read_json_file(f"{folder_path}/solution.json"))
+    latencies = dict(_read_json_file(f"{folder_path}/{num}/{run_id}_latencies.json"))
+    throughputs = dict(_read_json_file(f"{folder_path}/{num}/{run_id}_throughputs.json"))
+    solutions = dict(_read_json_file(f"{folder_path}{num}/{run_id}_{algo}_solution.json"))
 
     sim_data["node_properties"] = node_properties
     sim_data["loc_names"] = loc_names

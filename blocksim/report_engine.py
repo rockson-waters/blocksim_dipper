@@ -74,21 +74,6 @@ class ReportEngine:
                                             is_float_val = type(a) is numpy.float64
                                         blocks_and_times[k] = c[1] + c[0]
                                         break
-                            # for b in list(v):
-                            #     is_float_val = type(b) is numpy.float64
-                            #     while is_float_val is False:
-                            #         b = b[0]
-                            #         is_float_val = type(b) is numpy.float64
-
-
-
-                            # if type(v) is tuple:
-                            #     blocks_and_times[k] = v[0] + v[1]
-                            #     if (type(blocks_and_times[k]) is not numpy.float64):
-                            #         a = v[1]
-                            #         blocks_and_times[k] = a[0] + a[1]
-                            
-
             block_receive_time_all_node[address] = blocks_and_times
         self.block_receive_times = block_receive_time_all_node
 
@@ -183,8 +168,20 @@ class ReportEngine:
         tx_metrics["txn_throughput"] = txn_throughput
         tx_metrics["txn_proc_ratio"] = txn_proc_ratio
 
-        with open(f"reports/txn.json", 'w') as f:
-            f.write(json.dumps(tx_metrics))
+        with open("reports/av_txn_latency.csv", "a") as csvfile:
+            my_wirter = writer(csvfile, delimiter=",")
+            my_wirter.writerow([av_txn_latency])
+        
+        with open("reports/txn_throughput.csv", "a") as csvfile:
+            my_wirter = writer(csvfile, delimiter=",")
+            my_wirter.writerow([txn_throughput])
+        
+        with open("reports/txn_proc_ratio.csv", "a") as csvfile:
+            my_wirter = writer(csvfile, delimiter=",")
+            my_wirter.writerow([txn_proc_ratio])
+
+        # with open(f"reports/txn.json", 'w') as f:
+        #     f.write(json.dumps(tx_metrics))
 
     def _get_average_txn_proc_time(self):
         
@@ -194,7 +191,8 @@ class ReportEngine:
                 for txn in block.transactions:
                     self.all_txns.append(txn)
                     self.proc_times.append(txn.proc_time - txn.gen_time)
-        average_processing_time = sum(self.proc_times) / len(self.proc_times)
+        # average_processing_time = sum(self.proc_times) / len(self.proc_times)
+        average_processing_time = numpy.average(self.proc_times)
         return (average_processing_time)
 
     def get_transaction_throughput(self, sim_duration:float):
@@ -252,9 +250,11 @@ class ReportEngine:
             
             i = 0
             node_time = {}
+        av_net_lat = numpy.average(list(latencies.values()))
         with open("reports/latencies.csv", "a") as csvfile:
             my_wirter = writer(csvfile, delimiter=",")
-            my_wirter.writerows(latencies.items())
+            my_wirter.writerow([av_net_lat])
+            # my_wirter.writerows(latencies.items())
         return latencies
 
 
@@ -282,9 +282,11 @@ class ReportEngine:
             
             i1 += 1
             i2 = i1 + delta
+        av_av_fin_time = numpy.average(list(finality_times.values()))
         with open("reports/finality.csv", "a") as csvfile:
             my_wirter = writer(csvfile, delimiter=",")
-            my_wirter.writerows(finality_times.items())
+            my_wirter.writerow([av_av_fin_time])
+            # my_wirter.writerows(finality_times.items())
         return finality_times
 
 

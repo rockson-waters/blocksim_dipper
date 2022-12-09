@@ -106,3 +106,4 @@ blocksim/out_old
 finality.csv
 latencies.csv
 blocksim/reports
+blocksim/out
